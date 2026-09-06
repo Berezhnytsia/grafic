@@ -68,7 +68,7 @@
             max-width: 540px;
             background: var(--card-bg);
             backdrop-filter: blur(8px);
-            padding: 16px;
+            padding: 8px;
             border-radius: 16px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
             box-sizing: border-box;
@@ -82,35 +82,6 @@
             font-size: 22px;
             font-weight: 700;
             letter-spacing: -0.5px;
-        }
-
-        /* Стилі кнопки «Назад на карту» (за замовчуванням прихована) */
-        .map-btn-box {
-            display: none;
-            margin-bottom: 16px;
-            text-align: center;
-        }
-
-        .map-btn {
-            display: inline-block;
-            background-color: var(--primary);
-            color: white;
-            text-decoration: none;
-            padding: 10px 16px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            width: 100%;
-            box-sizing: border-box;
-            text-align: center;
-            cursor: pointer;
-        }
-
-        .map-btn:hover {
-            background-color: var(--primary-dark);
-            transform: translateY(-1px);
         }
 
         .select-box {
@@ -224,11 +195,6 @@
 
 <div class="container">
     
-    <!-- Контейнер кнопки, який відображається тільки в додатка за допомогою JS -->
-    <div class="map-btn-box" id="mapBtnContainer">
-        <a href="#" id="backToMapBtn" class="map-btn">← Назад на карту</a>
-    </div>
-
     <div class="select-box">
         <select id="weekSelect" onchange="onSelectChange(this.value)">
             <option value="">Завантаження тижнів...</option>
@@ -247,55 +213,38 @@
 </div>
 
 <script>
-    // Перевіряємо при завантаженні, чи сторінка відкрита з APK додатка
-    document.addEventListener("DOMContentLoaded", function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const mapBtnContainer = document.getElementById("mapBtnContainer");
-        const backBtn = document.getElementById("backToMapBtn");
-
-        if (urlParams.get('from') === 'app') {
-            mapBtnContainer.style.display = "block";
-            
-            backBtn.onclick = function(e) {
-                e.preventDefault();
-                if (window.history.length > 1) {
-                    window.history.back();
-                } else {
-                    window.location.href = "file:///android_asset/index.html";
-                }
-            };
-        }
-    });
-
     let globalRows = [];
     let weekColumns = []; 
     let currentWeekIndex = 0; 
 
     function parseWeekDate(dateStr) {
-        if (!dateStr) return null;
-        let match = dateStr.trim().match(/(\d{1,2})-(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})/);
-        if (!match) return null;
+    if (!dateStr) return null;
+    let match = dateStr.trim().match(/(\d{1,2})-(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})/);
+    if (!match) return null;
 
-        let startDay = parseInt(match[1]);
-        let endDay = parseInt(match[2]);
-        let month = parseInt(match[3]) - 1;
-        let rawYear = parseInt(match[4]);
-        let year = rawYear < 100 ? 2000 + rawYear : rawYear;
+    let startDay = parseInt(match[1]);
+    let endDay = parseInt(match[2]);
+    let month = parseInt(match[3]) - 1;
+    let rawYear = parseInt(match[4]);
+    let year = rawYear < 100 ? 2000 + rawYear : rawYear;
 
-        let startDate;
-        
-        if (startDay > endDay) {
-            startDate = new Date(year, month - 1, startDay, 0, 0, 0, 0);
-        } else {
-            startDate = new Date(year, month, startDay, 0, 0, 0, 0);
-        }
-
-        let endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 6);
-        endDate.setHours(23, 59, 59, 999);
-
-        return { start: startDate, end: endDate };
+    let startDate;
+    
+    // Якщо тиждень переходить через межу місяця (наприклад, 28-04.05.2026)
+    if (startDay > endDay) {
+        // startDay відноситься до попереднього місяця
+        startDate = new Date(year, month - 1, startDay, 0, 0, 0, 0);
+    } else {
+        startDate = new Date(year, month, startDay, 0, 0, 0, 0);
     }
+
+    // Кінець тижня — це завжди початок + 6 днів (неділя, 23:59:59)
+    let endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 6);
+    endDate.setHours(23, 59, 59, 999);
+
+    return { start: startDate, end: endDate };
+}
 
     function getRowStyle(roleText, rowIndex) {
         let text = roleText.toLowerCase();
