@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Мій кабінет · Території</title>
+  <link rel="icon" type="image/x-icon" href="favicon copy.ico">
+  <link rel="stylesheet" href="dashboard.css">
+  <script src="assets/dexie.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" id="sidebar">
+      <button class="brand profile-button" id="profileBtn" title="Змінити ім’я"><span class="brand-mark">✦</span><div><b id="userNameLabel">Мій кабінет</b><small>Збір Бережниця</small></div><span class="profile-edit">✎</span></button>
+      <nav class="nav-list" id="navList">
+        <button class="nav-item active" data-view="home"><span>⌂</span> Огляд</button>
+        <button class="nav-item" data-view="map"><span>⌖</span> Карта територій</button>
+        <button class="nav-item" data-view="time"><span>◷</span> Трекер часу</button>
+        <p class="nav-label">МОЇ ВКЛАДКИ</p>
+        <button class="nav-item" data-view="chart"><span>▥</span> Графік</button>
+        <button class="nav-item" data-view="stand"><span>▧</span> Стенд</button>
+        <div id="customTabs"></div>
+        <button class="add-tab" id="addTabBtn">＋ Додати вкладку</button>
+      </nav>
+      <div class="sidebar-footer"><span class="status-dot"></span> Дані зберігаються локально</div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar"><button id="mobileMenu" class="mobile-menu">☰</button><div id="crumb"><small>КАБІНЕТ</small><h1>Доброго дня</h1></div><div class="date-card"><span class="date-icon">☼</span><div><b id="todayDate">—</b><small id="todayWeekday">—</small></div></div></header>
+
+      <section class="view active" id="homeView">
+        <div class="welcome"><div><p class="eyebrow">ВАШ ПРОСТІР</p><h2>Плануйте день спокійно й зручно.</h2><p>Карта, записи часу та власні вкладки зібрані в одному місці.</p><button class="primary-btn" data-open-view="time">Запустити трекер <span>→</span></button></div><div class="welcome-orb"><span>СЬОГОДНІ</span><b id="todayTotal">0:00</b><small>відстежено часу</small></div></div>
+        <div class="stat-grid"><article><span class="stat-icon violet">⌖</span><div><small>КАРТА</small><b>Території та мітки</b></div><button class="link-btn" data-open-view="map">Відкрити →</button></article><article><span class="stat-icon peach">◷</span><div><small>ЗАПИСИ ЗА СЬОГОДНІ</small><b id="todayEntryCount">0 записів</b></div><button class="link-btn" data-open-view="time">Переглянути →</button></article><article><span class="stat-icon sage">▤</span><div><small>ДОДАТКОВІ ВКЛАДКИ</small><b id="customTabCount">0 вкладок</b></div><button class="link-btn" id="quickAddTab">Додати →</button></article></div>
+        <div class="home-grid"><section class="card recent-card"><div class="card-head"><div><p class="eyebrow">ОСТАННЯ АКТИВНІСТЬ</p><h3>Записи часу</h3></div><button class="text-btn" data-open-view="time">Усі записи</button></div><div class="recent-list" id="recentList"><p class="empty-copy">Ще немає записів. Запусти перший трекер.</p></div></section><section class="card quick-card"><p class="eyebrow">ШВИДКИЙ ПОЧАТОК</p><h3>Що хочеш зробити?</h3><button class="quick-action" data-open-view="map"><span>⌖</span><div><b>Відкрити карту</b><small>Працюй із територіями та мітками</small></div><i>→</i></button><button class="quick-action" data-open-view="time"><span>◷</span><div><b>Відстежити час</b><small>Запиши роботу або особисту справу</small></div><i>→</i></button></section></div>
+      </section>
+
+      <section class="view" id="mapView"><div class="view-head"><div><p class="eyebrow">РОБОЧА ВКЛАДКА</p><h2>Карта територій</h2><p>Ваші наявні мітки та локальна база даних залишаються без змін.</p></div><a class="outline-btn" href="index1.html" target="_blank">Відкрити окремо ↗</a></div><div class="map-frame"><iframe title="Карта територій" src="index1.html"></iframe></div></section>
+
+      <section class="view" id="chartView"><div class="view-head"><div><p class="eyebrow">ВБУДОВАНА ВКЛАДКА</p><h2>Графік</h2><p>Графік відкривається в інтерфейсі вашого кабінету.</p></div><a class="outline-btn" href="https://berezhnytsia.github.io/grafic/" target="_blank" rel="noopener noreferrer">Відкрити окремо ↗</a></div><div class="resource-frame"><iframe title="Графік" src="https://berezhnytsia.github.io/grafic/"></iframe></div></section>
+
+      <section class="view" id="standView"><div class="view-head"><div><p class="eyebrow">ВБУДОВАНА ВКЛАДКА</p><h2>Стенд</h2><p>Стенд відкривається в інтерфейсі вашого кабінету.</p></div><a class="outline-btn" href="https://berezhnytsia.github.io/grafic/stend.html" target="_blank" rel="noopener noreferrer">Відкрити окремо ↗</a></div><div class="resource-frame"><iframe title="Стенд" src="https://berezhnytsia.github.io/grafic/stend.html"></iframe></div></section>
+
+      <section class="view" id="timeView"><div class="view-head"><div><p class="eyebrow">ОСОБИСТИЙ ТРЕКЕР</p><h2>Час і записи</h2><p>Дані зберігаються локально у браузері на цьому пристрої.</p></div></div><div class="timer-layout"><section class="timer-card"><div class="timer-top"><span class="timer-state" id="timerState">ГОТОВИЙ</span><button class="reset-timer" id="resetTimerBtn" title="Скинути поточний трекер">↻</button></div><div class="timer-display" id="timerDisplay">00:00:00</div><label>Чим займаєтесь?<input id="taskInput" type="text" maxlength="70" placeholder="Наприклад: робота з картою"></label><div class="timer-buttons"><button class="primary-btn wide" id="startTimerBtn">▶ Почати</button><button class="pause-btn" id="pauseTimerBtn" disabled>Ⅱ</button></div></section><section class="summary-card"><p class="eyebrow">СЬОГОДНІ</p><b id="summaryToday">0:00</b><span>загалом відстежено</span><div class="summary-rule"></div><p class="eyebrow">ЦЬОГО ТИЖНЯ</p><b id="summaryWeek">0:00</b><span>за 7 останніх днів</span></section></div><section class="card entries-card"><div class="card-head"><div><p class="eyebrow">ІСТОРІЯ</p><h3>Усі записи</h3></div><button class="text-btn danger" id="clearEntriesBtn">Очистити історію</button></div><div id="entriesList" class="entries-list"><p class="empty-copy">Тут з’являться завершені записи.</p></div></section></section>
+
+      <section class="view" id="customView"><div class="view-head"><div><p class="eyebrow">ДОДАТКОВА ВКЛАДКА</p><h2 id="customTitle">—</h2><p id="customUrl">—</p></div><button class="outline-btn danger-outline" id="removeCustomTab">Видалити вкладку</button></div><div class="resource-frame"><iframe id="resourceFrame" title="Додаткова вкладка"></iframe><div class="resource-empty" id="resourceEmpty">Вкажіть адресу HTML-сторінки або вебпосилання під час створення вкладки.</div></div></section>
+    </main>
+  </div>
+
+  <div class="modal hidden" id="tabModal" role="dialog" aria-modal="true"><form class="modal-card" id="tabForm"><button class="modal-close" type="button" id="closeModal">×</button><p class="eyebrow">НОВА ВКЛАДКА</p><h2>Додайте свій простір</h2><label>Назва вкладки<input id="tabTitleInput" required maxlength="35" placeholder="Наприклад: Нотатки"></label><label>Адреса або HTML-файл<input id="tabUrlInput" required maxlength="300" placeholder="Наприклад: notes.html або https://…"></label><p class="modal-help">Для локального файлу використайте шлях від папки проєкту, наприклад <code>notes.html</code>.</p><button class="primary-btn wide" type="submit">Додати вкладку →</button></form></div>
+  <div class="modal hidden" id="profileModal" role="dialog" aria-modal="true"><form class="modal-card" id="profileForm"><button class="modal-close" type="button" id="closeProfileModal">×</button><p class="eyebrow">ВАШ ПРОФІЛЬ</p><h2>Як до вас звертатися?</h2><label>Ім’я в кабінеті<input id="userNameInput" required maxlength="35" placeholder="Ваше ім’я"></label><p class="modal-help">Ім’я зберігається локально на цьому пристрої. Простір: <b>Збори Бережниця</b>.</p><button class="primary-btn wide" type="submit">Зберегти →</button></form></div>
+  <script src="dashboard.js"></script>
+</body>
+</html>
