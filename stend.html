@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Графік стенду</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --card-bg: rgba(255, 255, 255, 0.35);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: rgba(241, 245, 249, 0.6);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.6)), 
+                        url('https://jwar.fwh.is/zal.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+            box-sizing: border-box;
+        }
+
+        h2 {
+            color: var(--text-main);
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .day-section {
+            margin-bottom: 25px;
+        }
+
+        .day-title {
+            background-color: #0284c7;
+            color: white;
+            padding: 12px 16px;
+            font-weight: bold;
+            font-size: 17px;
+            text-transform: uppercase;
+            border-radius: 10px 10px 0 0;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .table-wrapper {
+            border: 1px solid #e2e8f0;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.65);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 14px;
+            text-align: left;
+            font-size: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: rgba(241, 245, 249, 0.9) !important;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 13px;
+        }
+
+        td:first-child {
+            font-weight: bold;
+            color: #991b1b;
+            width: 35%;
+            background-color: rgba(254, 242, 242, 0.6);
+            border-right: 1px solid var(--border-color);
+            font-size: 16px;
+        }
+
+        td:last-child {
+            width: 65%;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .empty-cell {
+            color: #94a3b8;
+            font-style: italic;
+            font-weight: 400;
+        }
+
+        .loading, .error {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            font-style: italic;
+            font-size: 15px;
+        }
+        .error { color: #ef4444; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Графік чергувань</h2>
+    <div id="content">
+        <div class="loading">Завантаження даних із таблиці...</div>
+    </div>
+</div>
+
+<script>
+    async function loadSchedule() {
+        const contentDiv = document.getElementById('content');
+        const spreadsheetId = '1wHltqiFR8wZTUggtLzGZ6nFTvNvtNV_jnEQkJmPlLa8';
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=0`;
+
+        try {
+            const response = await fetch(csvUrl);
+            const csvText = await response.text();
+            
+            let rows = csvText.split('\n').map(row => {
+                return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, '').trim());
+            });
+
+            if (rows.length < 4) throw new Error("Недостатньо даних у таблиці");
+
+            let rowDates = rows[0]; 
+            let rowNames = rows[1]; 
+            let rowHeaders = rows[2]; 
+
+            let daysMap = [];
+            let currentDay = null;
+
+            for (let c = 1; c < rowNames.length; c++) {
+                let dateVal = rowDates[c] ? rowDates[c].trim() : "";
+                let nameVal = rowNames[c] ? rowNames[c].trim() : "";
+                let headerVal = rowHeaders[c] ? rowHeaders[c].trim() : "";
+
+                // Виправляємо назву, якщо раптом десь немає слова "вісник"
+                if (headerVal && !headerVal.toLowerCase().includes('вісник')) {
+                    headerVal = `${headerVal} вісник`;
+                }
+
+                if (dateVal !== "" || nameVal !== "") {
+                    if (currentDay) {
+                        daysMap.push(currentDay);
+                    }
+                    currentDay = {
+                        title: `${nameVal} ${dateVal}`.trim(),
+                        columns: []
+                    };
+                }
+
+                if (!currentDay && c === 1) {
+                    currentDay = { title: "День", columns: [] };
+                }
+
+                if (currentDay) {
+                    currentDay.columns.push({
+                        colIndex: c,
+                        header: headerVal || `${c} вісник`
+                    });
+                }
+            }
+            if (currentDay) {
+                daysMap.push(currentDay);
+            }
+
+            let html = "";
+
+            daysMap.forEach(day => {
+                html += `
+                    <div class="day-section">
+                        <div class="day-title">${day.title || "Графік"}</div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Час</th>
+                                        <th>Вісники / Позиції</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+
+                for (let r = 3; r < rows.length; r++) {
+                    let row = rows[r];
+                    if (!row || row.length === 0) continue;
+
+                    let timeVal = row[0] ? row[0].trim() : "";
+                    if (!timeVal) continue;
+
+                    let slotEntries = [];
+                    day.columns.forEach(col => {
+                        let person = row[col.colIndex] ? row[col.colIndex].trim() : "";
+                        let displayPerson = person !== "" ? person : '<span class="empty-cell">—</span>';
+                        
+                        if (day.columns.length > 1) {
+                            slotEntries.push(`<div><small style="color:var(--text-muted); font-size: 13px;">${col.header}:</small> <strong style="font-size: 16px;">${displayPerson}</strong></div>`);
+                        } else {
+                            slotEntries.push(`<strong style="font-size: 16px;">${displayPerson}</strong>`);
+                        }
+                    });
+
+                    html += `
+                        <tr>
+                            <td>${timeVal}</td>
+                            <td>${slotEntries.join('<div style="margin-top: 6px;"></div>')}</td>
+                        </tr>
+                    `;
+                }
+
+                html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            });
+
+            contentDiv.innerHTML = html;
+
+        } catch (error) {
+            console.error(error);
+            contentDiv.innerHTML = `<div class="error">Помилка завантаження даних із таблиці. Перевірте доступ.</div>`;
+        }
+    }
+
+    loadSchedule();
+</script>
+
+</body>
+</html>
