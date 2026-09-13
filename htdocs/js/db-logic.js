@@ -494,6 +494,125 @@ window.importMarkersFromCSV = async function(event) {
     reader.readAsText(file, 'UTF-8');
 };
 
+// Імпорт повного експорту: усі села, усі типи міток і вкладені аудіозаписи.
+// Формат відповідає файлу, який створює exportAllMarkersToCSV().
+window.importAllMarkersFromCSV = async function(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    const parseCsv = (text) => {
+        const rows = [];
+        let row = [];
+        let value = '';
+        let inQuotes = false;
+
+        for (let index = 0; index < text.length; index++) {
+            const char = text[index];
+            if (char === '"') {
+                if (inQuotes && text[index + 1] === '"') {
+                    value += '"';
+                    index++;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (char === ',' && !inQuotes) {
+                row.push(value);
+                value = '';
+            } else if (char === '\n' && !inQuotes) {
+                row.push(value.replace(/\r$/, ''));
+                if (row.some(cell => cell !== '')) rows.push(row);
+                row = [];
+                value = '';
+            } else {
+                value += char;
+            }
+        }
+
+        row.push(value.replace(/\r$/, ''));
+        if (row.some(cell => cell !== '')) rows.push(row);
+        return rows;
+    };
+
+    const reader = new FileReader();
+    reader.onload = async function(loadEvent) {
+        try {
+            if (!window.db || !window.db.markers) {
+                throw new Error('Локальна база даних ще не готова. Спробуйте ще раз за мить.');
+            }
+
+            const rows = parseCsv(String(loadEvent.target.result || ''));
+            if (rows.length < 2) {
+                alert('Файл порожній або має невірний формат.');
+                return;
+            }
+
+            const header = rows[0].map(cell => cell.replace(/^\uFEFF/, '').trim().toLowerCase());
+            const column = name => header.indexOf(name);
+            const required = ['type', 'street', 'house', 'territory', 'townslug', 'comment', 'longitude', 'latitude'];
+            if (required.some(name => column(name) === -1)) {
+                alert('Це не файл повного експорту. Використайте CSV, створений кнопкою «Завантажити ВСІ записи».');
+                return;
+            }
+
+            const existing = await window.db.markers.toArray();
+            const knownLocations = new Set(existing.map(marker =>
+                `${String(marker.town_slug || '').trim().toLowerCase()}|${Number(marker.lng).toFixed(7)}|${Number(marker.lat).toFixed(7)}`
+            ));
+            const imported = [];
+            let skipped = 0;
+            let invalid = 0;
+
+            for (const row of rows.slice(1)) {
+                const get = name => (row[column(name)] || '').trim();
+                const lng = Number.parseFloat(get('longitude'));
+                const lat = Number.parseFloat(get('latitude'));
+                const townSlug = get('townslug').toLowerCase() || get('territory').toLowerCase();
+
+                if (!townSlug || !Number.isFinite(lng) || !Number.isFinite(lat)) {
+                    invalid++;
+                    continue;
+                }
+
+                const locationKey = `${townSlug}|${lng.toFixed(7)}|${lat.toFixed(7)}`;
+                if (knownLocations.has(locationKey)) {
+                    skipped++;
+                    continue;
+                }
+
+                const audioDuration = Number.parseFloat(get('audio duration (s)')) || 0;
+                imported.push({
+                    type: get('type') || 'default',
+                    street: get('street'),
+                    house_number: get('house'),
+                    territory: get('territory'),
+                    town_slug: townSlug,
+                    comment: get('comment'),
+                    lng,
+                    lat,
+                    audio_duration: audioDuration,
+                    audio_blob: get('audio base64') || null,
+                    user_name: 'Імпорт',
+                    created_at: get('created at') || new Date().toISOString()
+                });
+                knownLocations.add(locationKey);
+            }
+
+            if (imported.length) await window.db.markers.bulkAdd(imported);
+
+            const currentTown = new URLSearchParams(window.location.search).get('town') || 'berezhnytsia';
+            if (window.loadUserMarkers) await window.loadUserMarkers(currentTown);
+            alert(`Імпорт завершено!\nДодано: ${imported.length}\nПропущено як дублікати: ${skipped}${invalid ? `\nПропущено через помилкові дані: ${invalid}` : ''}`);
+        } catch (error) {
+            console.error('Помилка глобального імпорту CSV:', error);
+            alert(`Не вдалося імпортувати файл: ${error.message}`);
+        } finally {
+            event.target.value = '';
+        }
+    };
+
+    reader.readAsText(file, 'UTF-8');
+};
+
 window.exportMarkersToCSV = async function() {
     let markers = [];
 
